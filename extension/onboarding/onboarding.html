@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uWarden - Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+    <div class="onboarding-container">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-step active" data-step="1"></div>
+            <div class="progress-step" data-step="2"></div>
+            <div class="progress-step" data-step="3"></div>
+            <div class="progress-step" data-step="4"></div>
+        </div>
+
+        <!-- Step 1: Sign In -->
+        <div class="step-content" id="step-1">
+            <h1 class="step-title">Your focus finally has a warden.</h1>
+            <p class="step-subtitle">Sign in to activate your personal AI accountability system.</p>
+            <button id="google-signin" class="primary-button">
+                Continue with Google
+            </button>
+        </div>
+
+        <!-- Step 2: Work Goal -->
+        <div class="step-content hidden" id="step-2">
+            <h1 class="step-title">What are you working on right now?</h1>
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="work-goal" 
+                    class="text-input" 
+                    placeholder="e.g. Building my startup MVP"
+                    maxlength="100"
+                >
+            </div>
+            <button id="continue-step-2" class="primary-button" disabled>
+                Continue
+            </button>
+        </div>
+
+        <!-- Step 3: Build Blacklist -->
+        <div class="step-content hidden" id="step-3">
+            <h1 class="step-title">Which sites steal your focus?</h1>
+            <div class="blacklist-input-group">
+                <input 
+                    type="text" 
+                    id="blacklist-input" 
+                    class="text-input" 
+                    placeholder="e.g. twitter.com"
+                >
+                <button id="add-blacklist" class="add-button">
+                    Add
+                </button>
+            </div>
+            <div class="blacklist-counter">
+                <span id="blacklist-count">0</span> sites added
+            </div>
+            <div id="blacklist-chips" class="blacklist-chips"></div>
+            <button id="continue-step-3" class="primary-button" disabled>
+                Continue
+            </button>
+        </div>
+
+        <!-- Step 4: Choose Strictness -->
+        <div class="step-content hidden" id="step-4">
+            <h1 class="step-title">How hard should your warden push?</h1>
+            <div class="strictness-cards">
+                <div class="strictness-card" data-strictness="soft">
+                    <div class="card-title">SOFT MODE</div>
+                    <div class="card-escape-phrase">"let me through"</div>
+                    <div class="card-description">For when you occasionally need legitimate access</div>
+                </div>
+                <div class="strictness-card recommended" data-strictness="hard">
+                    <div class="recommended-badge">Recommended</div>
+                    <div class="card-title">HARD MODE</div>
+                    <div class="card-escape-phrase">"I am weak and I give up"</div>
+                    <div class="card-description">For people who need real friction to stop</div>
+                </div>
+            </div>
+            <button id="activate-warden" class="primary-button" disabled>
+                Activate uWarden
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="onboarding.js"></script>
+</body>
+</html>

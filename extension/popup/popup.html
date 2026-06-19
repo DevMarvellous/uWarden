@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uWarden</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- State A: Not signed in / Onboarding not complete -->
+        <div id="state-logged-out" class="state-content hidden">
+            <div class="logo">⚖ UWARDEN</div>
+            <p class="tagline">Your focus needs a warden.</p>
+            <button id="get-started" class="primary-button">Get Started</button>
+        </div>
+
+        <!-- State B: Signed in (everything is free) -->
+        <div id="state-active" class="state-content hidden">
+            <div class="user-section">
+                <div class="user-email" id="user-email">user@example.com</div>
+                <div class="badge pro-badge">uWarden</div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">Your Blacklist</h3>
+                <div class="blacklist-input-group">
+                    <input
+                        type="text"
+                        id="blacklist-input"
+                        class="text-input"
+                        placeholder="Add site..."
+                        maxlength="50"
+                    >
+                    <button id="add-site" class="add-button">Add</button>
+                </div>
+                <div id="blacklist-list" class="blacklist-list"></div>
+            </div>
+
+            <div class="stats-section">
+                <div class="stat-line">
+                    <span id="blocked-count">0</span> distractions blocked today
+                </div>
+                <div class="pro-status">
+                    <div class="status-dot"></div>
+                    <span>AI Roasting: Active</span>
+                </div>
+            </div>
+
+            <div class="actions-section">
+                <button id="view-dashboard" class="primary-button">
+                    View Shame Stats
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="popup.js"></script>
+</body>
+</html>

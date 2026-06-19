@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital@0;1&family=IBM+Plex+Mono&display=swap');
+
+#uw-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #080808 !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: uw-fade-in 0.3s ease !important;
+}
+
+#uw-overlay.uw-fade-out {
+  animation: uw-fade-out 0.4s ease forwards !important;
+}
+
+@keyframes uw-fade-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes uw-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.uw-container {
+  max-width: 560px;
+  width: 90%;
+  text-align: center;
+  padding: 48px 32px;
+}
+
+.uw-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  color: #b91c1c;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+}
+
+.uw-roast {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 26px;
+  line-height: 1.5;
+  color: #f5f5f5;
+  margin-bottom: 16px;
+}
+
+.uw-persona {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 48px;
+}
+
+.uw-escape-input {
+  width: 100%;
+  background: #141414;
+  border: 1px solid #2d2d2d;
+  color: #f5f5f5;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  padding: 14px 18px;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.uw-escape-input:focus {
+  border-color: #b91c1c;
+}
+
+.uw-escape-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: #4b5563;
+  margin-top: 12px;
+}
+
+.uw-escape-phrase {
+  color: #6b7280;
+}

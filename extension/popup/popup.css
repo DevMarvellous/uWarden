@@ -1,0 +1,361 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0d0d0d;
+  color: #f5f5f5;
+  width: 320px;
+  min-height: 480px;
+}
+
+.popup-container {
+  padding: 24px 20px;
+}
+
+/* State Management */
+.state-content {
+  animation: fadeIn 0.2s ease;
+}
+
+.state-content.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Logo and Branding */
+.logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #b91c1c;
+  text-align: center;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.tagline {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.4;
+}
+
+/* User Section */
+.user-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2d2d2d;
+}
+
+.user-email {
+  font-size: 14px;
+  color: #f5f5f5;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.free-badge {
+  background: #374151;
+  color: #9ca3af;
+}
+
+.pro-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f5f5f5;
+  margin-bottom: 12px;
+}
+
+/* Input Styles */
+.text-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #1a1a1a;
+  border: 1px solid #2d2d2d;
+  border-radius: 6px;
+  color: #f5f5f5;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.text-input:focus {
+  border-color: #b91c1c;
+}
+
+.text-input:disabled {
+  background: #0d0d0d;
+  border-color: #1f1f1f;
+  color: #6b7280;
+}
+
+.blacklist-input-group {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.blacklist-input-group .text-input {
+  flex: 1;
+}
+
+.add-button {
+  background: #374151;
+  color: #f5f5f5;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.add-button:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.add-button:disabled {
+  background: #1f1f1f;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.blacklist-counter {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.blacklist-list {
+  max-height: 120px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.blacklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1a1a1a;
+  border: 1px solid #2d2d2d;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.blacklist-url {
+  font-size: 13px;
+  color: #f5f5f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.remove-btn:hover {
+  background: #374151;
+  color: #f5f5f5;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border: 1px solid #2d2d2d;
+}
+
+.stat-line {
+  font-size: 14px;
+  color: #f5f5f5;
+  font-weight: 500;
+  text-align: center;
+}
+
+.pro-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #10b981;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Actions Section */
+.actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.primary-button {
+  background: #b91c1c;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #991b1b;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  background: #374151;
+  color: #f5f5f5;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.secondary-button.disabled {
+  background: #1f1f1f;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.upgrade-button {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.upgrade-button:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-1px);
+}
+
+/* Scrollbar Styling */
+.blacklist-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.blacklist-list::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.blacklist-list::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.blacklist-list::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 300px) {
+  .popup-container {
+    padding: 20px 16px;
+  }
+  
+  .user-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .blacklist-input-group {
+    flex-direction: column;
+  }
+  
+  .add-button {
+    align-self: flex-end;
+  }
+}

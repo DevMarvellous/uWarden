@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uWarden - Shame Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">⚖ UWARDEN</div>
+            <div class="user-info">
+                <span id="user-email">user@example.com</span>
+                <div class="badge pro-badge">uWarden</div>
+            </div>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="section summary-section">
+            <h2 class="section-title">Your Shame Summary</h2>
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-value" id="total-visits">0</div>
+                    <div class="card-label">Total Attempts</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value" id="today-visits">0</div>
+                    <div class="card-label">Today</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value" id="top-site">-</div>
+                    <div class="card-label">Top Site</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-value" id="override-rate">0%</div>
+                    <div class="card-label">Override Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="section chart-section">
+            <h2 class="section-title">7-Day Shame Trend</h2>
+            <div class="chart-container">
+                <canvas id="shameChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="section table-section">
+            <h2 class="section-title">Recent Shame</h2>
+            <div class="table-wrapper">
+                <table class="shame-table">
+                    <thead>
+                        <tr>
+                            <th>Site</th>
+                            <th>Time</th>
+                            <th>Overridden</th>
+                            <th>Roast</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shame-table-body">
+                        <!-- Rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Share Card Section -->
+        <div class="section share-section">
+            <div class="share-card">
+                <h3 class="share-title">Share Your Shame</h3>
+                <p class="share-description">
+                    Download your shame stats as a PNG and share your progress. Or keep it private - we won't judge.
+                </p>
+                <button id="download-png" class="download-button">
+                    📸 Download as PNG
+                </button>
+                <div class="share-stats">
+                    <div class="share-stat">
+                        <span class="stat-number" id="streak-days">0</span>
+                        <span class="stat-label">Day Streak</span>
+                    </div>
+                    <div class="share-stat">
+                        <span class="stat-number" id="improvement-rate">0%</span>
+                        <span class="stat-label">vs Last Week</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="dashboard.js"></script>
+</body>
+</html>
