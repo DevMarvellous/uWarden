@@ -9,7 +9,7 @@
 
 const UWARDEN_CONFIG = {
   // Where /api/roast is served from. Local dev default:
-  API_BASE_URL: 'http://localhost:3000',
+  API_BASE_URL: 'http://localhost:3001',
 
   SUPABASE_URL: 'https://kmjuarnudralmomkbhph.supabase.co',
   SUPABASE_ANON_KEY:

@@ -1,1 +1,168 @@
 @import "tailwindcss";
+
+:root {
+  --ink: #1b2430;
+  --ink-deep: #11161d;
+  --manila: #e8dcc0;
+  --carbon: #14110f;
+  --carbon-soft: #3c3628;
+  --carbon-faint: #5c5440;
+  --stamp-red: #b3251e;
+  --ledger-green: #2f4538;
+}
+
+body {
+  background: var(--ink);
+}
+
+.citation-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  background: radial-gradient(circle at 50% -10%, #233044 0%, var(--ink) 55%, var(--ink-deep) 100%);
+}
+
+.citation-card {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  background: var(--manila);
+  color: var(--carbon);
+  padding: 52px 40px 40px;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.citation-card::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background-image: radial-gradient(circle, var(--ink-deep) 4px, transparent 4.5px);
+  background-size: 28px 14px;
+  background-repeat: repeat-x;
+  background-position: 14px center;
+}
+
+.citation-mark {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--stamp-red);
+  margin-bottom: 28px;
+}
+
+.citation-headline {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(34px, 6vw, 54px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0 0 18px;
+}
+
+.citation-sub {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--carbon-soft);
+  max-width: 440px;
+  margin: 0 0 32px;
+}
+
+.citation-fields {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(20, 17, 15, 0.18);
+}
+
+.citation-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.citation-row dt {
+  color: var(--carbon-faint);
+  letter-spacing: 0.04em;
+}
+
+.citation-row dd {
+  margin: 0;
+  color: var(--carbon);
+}
+
+.citation-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.citation-note {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--carbon-faint);
+  max-width: 280px;
+  margin: 0;
+}
+
+.citation-stamp {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--stamp-red);
+  border: 3px solid var(--stamp-red);
+  border-radius: 6px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  transform: rotate(-9deg);
+  animation: stamp-impact 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s both;
+}
+
+@keyframes stamp-impact {
+  0% {
+    transform: rotate(-9deg) scale(2.6);
+    opacity: 0;
+  }
+  60% {
+    transform: rotate(-9deg) scale(0.92);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-9deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .citation-stamp {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .citation-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .citation-row {
+    grid-template-columns: 100px 1fr;
+  }
+}

@@ -1,52 +1,41 @@
 export default function Home() {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#080808',
-        color: '#f5f5f5',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'IBM Plex Mono, monospace',
-        padding: '24px',
-      }}
-    >
-      <div style={{ maxWidth: 560, textAlign: 'center' }}>
-        <p
-          style={{
-            color: '#b91c1c',
-            fontSize: 11,
-            letterSpacing: '0.25em',
-            marginBottom: 32,
-            textTransform: 'uppercase',
-          }}
-        >
-          ⚖ uWarden
+    <main className="citation-page">
+      <div className="citation-card">
+        <div className="citation-mark">
+          <span>⚖ uWarden</span>
+          <span>No. 000142</span>
+        </div>
+
+        <h1 className="citation-headline">Cited for doomscrolling.</h1>
+
+        <p className="citation-sub">
+          uWarden catches you mid-scroll, takes over the tab, and makes an AI
+          write you up for it. Funny until it isn&apos;t. Free, forever.
         </p>
 
-        <h1
-          style={{
-            fontFamily: 'Lora, serif',
-            fontStyle: 'italic',
-            fontSize: 32,
-            lineHeight: 1.4,
-            marginBottom: 20,
-          }}
-        >
-          The AI accountability extension that roasts your distractions.
-        </h1>
+        <dl className="citation-fields">
+          <div className="citation-row">
+            <dt>Issued to</dt>
+            <dd>you</dd>
+          </div>
+          <div className="citation-row">
+            <dt>Violation</dt>
+            <dd>47 minutes on x.com, mid-deadline</dd>
+          </div>
+          <div className="citation-row">
+            <dt>Officer</dt>
+            <dd>Disappointed Nigerian Dad</dd>
+          </div>
+        </dl>
 
-        <p style={{ color: '#6b7280', fontSize: 14, lineHeight: 1.7, marginBottom: 40 }}>
-          Block the sites that steal your focus. When you slip, uWarden takes over the
-          tab with a personalized roast — and the only way out is admitting it in writing.
-          Free, forever.
-        </p>
-
-        <p style={{ color: '#4b5563', fontSize: 12 }}>
-          Coming soon to the Chrome Web Store.
-        </p>
+        <div className="citation-footer">
+          <p className="citation-note">
+            Coming soon to the Chrome Web Store. No fee, no premium tier, no catch.
+          </p>
+          <span className="citation-stamp">Free — no fee</span>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
