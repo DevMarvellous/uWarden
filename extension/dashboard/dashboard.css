@@ -61,11 +61,6 @@ body {
   color: white;
 }
 
-.free-badge {
-  background: #374151;
-  color: #9ca3af;
-}
-
 /* Sections */
 .section {
   margin-bottom: 32px;
@@ -106,6 +101,14 @@ body {
   font-weight: 700;
   color: #b91c1c;
   margin-bottom: 8px;
+}
+
+.summary-card-positive {
+  border-color: #134e3a;
+}
+
+.summary-card-positive .card-value {
+  color: #10b981;
 }
 
 .card-label {

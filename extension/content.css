@@ -44,6 +44,23 @@
   text-transform: uppercase;
 }
 
+.uw-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 28px;
+  letter-spacing: 0.02em;
+}
+
+.uw-meta .uw-site {
+  color: #9ca3af;
+}
+
+.uw-meta .uw-visit {
+  color: #b91c1c;
+  margin-left: 6px;
+}
+
 .uw-roast {
   font-family: 'Lora', serif;
   font-style: italic;
@@ -57,7 +74,52 @@
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
   color: #6b7280;
-  margin-bottom: 48px;
+  margin-bottom: 36px;
+}
+
+.uw-goal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  margin-bottom: 40px;
+  border: 1px solid #1f1f1f;
+  border-left: 2px solid #b91c1c;
+  border-radius: 6px;
+  background: #0e0e0e;
+  text-align: left;
+}
+
+.uw-goal-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #4b5563;
+}
+
+.uw-goal-text {
+  font-family: 'Lora', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: #d1d5db;
+}
+
+.uw-countdown {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #4b5563;
+  padding: 14px 0;
+}
+
+.uw-countdown .uw-countdown-num {
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.uw-escape-area {
+  animation: uw-fade-in 0.3s ease;
 }
 
 .uw-escape-input {
@@ -86,4 +148,23 @@
 
 .uw-escape-phrase {
   color: #6b7280;
+}
+
+.uw-cooldown-panel {
+  padding-top: 8px;
+}
+
+.uw-cooldown-timer {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 56px;
+  font-weight: 600;
+  color: #b91c1c;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.uw-cooldown-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: #4b5563;
 }

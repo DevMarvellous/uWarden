@@ -3,9 +3,11 @@ let userData = {
   session: null,
   userId: null,
   email: '',
+  isPro: false,
   blacklist: [],
   workGoal: '',
   strictness: 'hard',
+  persona: 'nigerian-dad',
   onboardingComplete: false
 };
 
@@ -18,17 +20,19 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadUserData() {
   try {
     const storage = await chrome.storage.local.get([
-      'session', 'user_id', 'email', 'blacklist',
-      'work_goal', 'strictness', 'onboarding_complete'
+      'session', 'user_id', 'email', 'is_pro', 'blacklist',
+      'work_goal', 'strictness', 'persona', 'onboarding_complete'
     ]);
 
     userData = {
       session: storage.session || null,
       userId: storage.user_id || null,
       email: storage.email || '',
+      isPro: storage.is_pro || false,
       blacklist: storage.blacklist || [],
       workGoal: storage.work_goal || '',
       strictness: storage.strictness || 'hard',
+      persona: storage.persona || 'nigerian-dad',
       onboardingComplete: storage.onboarding_complete || false
     };
 
@@ -58,8 +62,22 @@ function updateUI() {
   if (currentState === 'active') {
     document.getElementById('user-email').textContent = userData.email;
     updateBlacklistUI();
-    updateBlockedCount();
+    updateTodayStats();
+    updateStreakBanner();
+    updatePersonaUI();
   }
+}
+
+function updatePersonaUI() {
+  document.querySelectorAll('.persona-option').forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.persona === userData.persona);
+  });
+}
+
+async function selectPersona(persona) {
+  userData.persona = persona;
+  await chrome.storage.local.set({ persona });
+  updatePersonaUI();
 }
 
 function updateBlacklistUI() {
@@ -85,20 +103,61 @@ function updateBlacklistUI() {
   });
 }
 
-async function updateBlockedCount() {
+// Surfaces "resisted" as the primary, positive stat — not just failures.
+// The data (total vs. caved) already existed; it was just never shown.
+async function updateTodayStats() {
   try {
     if (!userData.userId) return;
 
     const response = await chrome.runtime.sendMessage({
-      type: 'GET_BLOCKED_COUNT',
+      type: 'GET_TODAY_STATS',
       userId: userData.userId
     });
 
-    document.getElementById('blocked-count').textContent =
-      response && !response.error ? response.count || 0 : '0';
+    const stats = response && !response.error ? response : { total: 0, caved: 0, resisted: 0 };
+    document.getElementById('resisted-count').textContent = stats.resisted || 0;
+    document.getElementById('blocked-count').textContent = stats.total || 0;
+    document.getElementById('caved-count').textContent = stats.caved || 0;
   } catch (error) {
-    console.error('Error getting blocked count:', error);
-    document.getElementById('blocked-count').textContent = '0';
+    console.error('Error getting today stats:', error);
+  }
+}
+
+// Quiet re-engagement after a broken streak, instead of just resetting the
+// counter silently. Counters the "I already failed, screw it" spiral
+// (the abstinence violation effect) that kills momentum after one slip.
+async function updateStreakBanner() {
+  const banner = document.getElementById('streak-banner');
+  try {
+    if (!userData.userId) return;
+
+    const response = await chrome.runtime.sendMessage({
+      type: 'GET_VISIT_LOGS',
+      userId: userData.userId
+    });
+
+    const visits = response && !response.error ? response.visits || [] : [];
+    const streak = uwCalculateStreak(visits);
+
+    const { best_streak: storedBest = 0 } = await chrome.storage.local.get(['best_streak']);
+    if (streak > storedBest) {
+      await chrome.storage.local.set({ best_streak: streak });
+    }
+
+    banner.classList.remove('hidden', 'streak-banner-up', 'streak-banner-reset');
+
+    if (streak === 0 && storedBest >= 2) {
+      banner.classList.add('streak-banner-reset');
+      banner.textContent = `Your ${storedBest}-day streak reset. That's normal — every focused day starts right now.`;
+    } else if (streak >= 1) {
+      banner.classList.add('streak-banner-up');
+      banner.textContent = `${streak} day${streak === 1 ? '' : 's'} focused. Keep going.`;
+    } else {
+      banner.classList.add('hidden');
+    }
+  } catch (error) {
+    console.error('Error computing streak:', error);
+    banner.classList.add('hidden');
   }
 }
 
@@ -130,6 +189,11 @@ function setupEventListeners() {
   document.getElementById('view-dashboard').addEventListener('click', () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('dashboard/dashboard.html') });
   });
+
+  // Persona selector
+  document.querySelectorAll('.persona-option').forEach((btn) => {
+    btn.addEventListener('click', () => selectPersona(btn.dataset.persona));
+  });
 }
 
 async function addBlacklistItem() {
@@ -137,6 +201,12 @@ async function addBlacklistItem() {
   const url = inputElement.value.trim().toLowerCase();
 
   if (!url) return;
+
+  const limit = uwBlacklistLimit(userData.isPro);
+  if (userData.blacklist.length >= limit) {
+    alert(`The free plan is limited to ${limit} sites.`);
+    return;
+  }
 
   if (userData.blacklist.includes(url)) {
     alert('This site is already in your blacklist.');

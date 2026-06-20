@@ -70,16 +70,21 @@
         <div class="step-content hidden" id="step-4">
             <h1 class="step-title">How hard should your warden push?</h1>
             <div class="strictness-cards">
+                <div class="strictness-card recommended" data-strictness="cooldown">
+                    <div class="recommended-badge">Recommended</div>
+                    <div class="card-title">COOLDOWN MODE</div>
+                    <div class="card-escape-phrase">Unlocks itself in 10 minutes</div>
+                    <div class="card-description">No typing, no willpower needed — the site just becomes unavailable for a while. The most effective mode for breaking impulsive checks.</div>
+                </div>
+                <div class="strictness-card" data-strictness="hard">
+                    <div class="card-title">HARD MODE</div>
+                    <div class="card-escape-phrase">"I am choosing distraction over my goal"</div>
+                    <div class="card-description">For people who want real friction — you can get through, but you have to admit it first</div>
+                </div>
                 <div class="strictness-card" data-strictness="soft">
                     <div class="card-title">SOFT MODE</div>
                     <div class="card-escape-phrase">"let me through"</div>
                     <div class="card-description">For when you occasionally need legitimate access</div>
-                </div>
-                <div class="strictness-card recommended" data-strictness="hard">
-                    <div class="recommended-badge">Recommended</div>
-                    <div class="card-title">HARD MODE</div>
-                    <div class="card-escape-phrase">"I am weak and I give up"</div>
-                    <div class="card-description">For people who need real friction to stop</div>
                 </div>
             </div>
             <button id="activate-warden" class="primary-button" disabled>
@@ -89,6 +94,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="../config.js"></script>
     <script src="onboarding.js"></script>
 </body>
 </html>

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   work_goal TEXT,
-  strictness TEXT DEFAULT 'hard' CHECK (strictness IN ('hard', 'medium', 'easy')),
+  strictness TEXT DEFAULT 'hard' CHECK (strictness IN ('hard', 'soft', 'cooldown')),
   onboarding_complete BOOLEAN DEFAULT FALSE,
   is_pro BOOLEAN DEFAULT FALSE
 );
@@ -35,6 +35,13 @@ CREATE TABLE IF NOT EXISTS visit_logs (
 
 -- Migration for existing databases: add the roast column if it is missing
 ALTER TABLE visit_logs ADD COLUMN IF NOT EXISTS roast TEXT;
+
+-- Migration for existing databases: the original strictness CHECK only allowed
+-- ('hard', 'medium', 'easy'), but the app has only ever written 'hard' or 'soft' —
+-- meaning soft mode silently failed to save. Widen it and add 'cooldown'.
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_strictness_check;
+ALTER TABLE users ADD CONSTRAINT users_strictness_check
+  CHECK (strictness IN ('hard', 'soft', 'cooldown'));
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

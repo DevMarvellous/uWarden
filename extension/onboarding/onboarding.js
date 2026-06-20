@@ -110,6 +110,12 @@ function addBlacklistSite() {
   
   if (!url) return;
 
+  const limit = uwBlacklistLimit(false);
+  if (userData.blacklist.length >= limit) {
+    alert(`The free plan is limited to ${limit} sites.`);
+    return;
+  }
+
   if (userData.blacklist.includes(url)) {
     alert('This site is already in your blacklist.');
     return;

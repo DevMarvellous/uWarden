@@ -23,6 +23,8 @@
                 <div class="badge pro-badge">uWarden</div>
             </div>
 
+            <div id="streak-banner" class="streak-banner hidden"></div>
+
             <div class="section">
                 <h3 class="section-title">Your Blacklist</h3>
                 <div class="blacklist-input-group">
@@ -39,12 +41,31 @@
             </div>
 
             <div class="stats-section">
-                <div class="stat-line">
-                    <span id="blocked-count">0</span> distractions blocked today
+                <div class="stat-line stat-positive">
+                    <span id="resisted-count">0</span> distractions resisted today
+                </div>
+                <div class="stat-line-secondary">
+                    <span id="blocked-count">0</span> attempts total · <span id="caved-count">0</span> caved
                 </div>
                 <div class="pro-status">
                     <div class="status-dot"></div>
                     <span>AI Roasting: Active</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">Who roasts you?</h3>
+                <div class="persona-options">
+                    <button class="persona-option" data-persona="nigerian-dad">
+                        <span class="persona-emoji">😮‍💨</span>
+                        <span class="persona-name">Disappointed Dad</span>
+                        <span class="persona-desc">Quiet, tired, deeply unimpressed</span>
+                    </button>
+                    <button class="persona-option" data-persona="gentle-coach">
+                        <span class="persona-emoji">🌱</span>
+                        <span class="persona-name">Focus Coach</span>
+                        <span class="persona-desc">Warm, encouraging, no shame</span>
+                    </button>
                 </div>
             </div>
 
@@ -57,6 +78,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="../config.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

@@ -90,6 +90,39 @@ async function markVisitAsOverridden(url) {
   }
 }
 
+// Return a non-expired access token, refreshing the Supabase session if needed.
+// The service worker is ephemeral and supabase-js can't persist a session here,
+// so we manage the refresh manually against chrome.storage.
+async function getFreshAccessToken(session) {
+  if (!session) return null;
+
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiresAt = session.expires_at || 0;
+
+  // Still valid (with a 60s safety buffer)? Use it as-is.
+  if (expiresAt - 60 > nowSeconds) {
+    return session.access_token;
+  }
+
+  // Expired or about to expire — try to refresh.
+  try {
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: session.refresh_token
+    });
+
+    if (!error && data.session) {
+      await chrome.storage.local.set({ session: data.session });
+      return data.session.access_token;
+    }
+  } catch (error) {
+    console.error('Error refreshing session:', error);
+  }
+
+  // Refresh failed — return the (possibly stale) token; the API will 401 and the
+  // caller falls back to a static roast.
+  return session.access_token;
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({ url: chrome.runtime.getURL('onboarding/onboarding.html') });
@@ -136,19 +169,18 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (details.frameId !== 0) return;
 
   const storage = await chrome.storage.local.get([
-    'session', 'blacklist', 'user_id', 'work_goal', 'strictness'
+    'session', 'blacklist', 'user_id', 'work_goal', 'strictness', 'is_pro', 'persona'
   ]);
 
   if (!storage.session || !storage.blacklist || storage.blacklist.length === 0) return;
 
-  const matchedSite = matchBlacklistedSite(details.url, storage.blacklist);
+  const match = matchBlacklistedSite(details.url, storage.blacklist);
 
-  if (!matchedSite) return;
+  if (!match) return;
+  const { entry: matchedSite, hostname } = match;
 
-  let roast;
-
-  // AI roast for everyone (free for all). Falls back to a static roast on any
-  // failure or rate-limit.
+  // How many times the user has hit a blocked site today (shown in the overlay).
+  let visitCount = 0;
   try {
     const today = new Date().toISOString().split('T')[0];
     const { data: visits } = await supabase
@@ -157,40 +189,88 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
       .eq('user_id', storage.user_id)
       .gte('visited_at', today)
       .lt('visited_at', today + 'T23:59:59.999Z');
-
-    const visitCount = visits?.length || 0;
-    const timeOfDay = new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const accessToken = storage.session?.access_token;
-
-    const response = await fetch(`${API_BASE_URL}/api/roast`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
-      },
-      body: JSON.stringify({
-        user_id: storage.user_id,
-        url: details.url,
-        site_name: matchedSite,
-        work_goal: storage.work_goal,
-        visit_count_today: visitCount,
-        time_of_day: timeOfDay
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      roast = data.roast;
-    }
+    visitCount = visits?.length || 0;
   } catch (error) {
-    console.error('Error getting AI roast:', error);
+    console.error('Error counting visits:', error);
   }
 
-  // Fallback to static roast if AI fails or is rate-limited
+  const personaId = storage.persona || UWARDEN_CONFIG.DEFAULT_PERSONA;
+  const personaName =
+    UWARDEN_CONFIG.PERSONAS[personaId] || UWARDEN_CONFIG.PERSONAS['nigerian-dad'];
+
+  // Cooldown mode: no roast call, no escape phrase — the site just unlocks on
+  // its own after a fixed wait. Once served today, pass through silently.
+  if (storage.strictness === 'cooldown') {
+    let unlockAt = await getCooldownUnlockAt(hostname);
+
+    if (unlockAt && Date.now() >= unlockAt) {
+      return; // already waited it out today — let them through
+    }
+    if (!unlockAt) {
+      unlockAt = await startCooldown(hostname);
+    }
+
+    const remainingMs = Math.max(0, unlockAt - Date.now());
+    const roastForCooldown = STATIC_ROASTS[Math.floor(Math.random() * STATIC_ROASTS.length)];
+
+    chrome.tabs.sendMessage(details.tabId, {
+      type: 'SHOW_OVERLAY',
+      roast: roastForCooldown,
+      site_name: matchedSite,
+      strictness: 'cooldown',
+      work_goal: storage.work_goal || '',
+      visit_count: visitCount + 1,
+      persona_name: personaName,
+      cooldown_remaining_ms: remainingMs
+    });
+
+    if (storage.user_id) {
+      await logVisit(storage.user_id, details.url, matchedSite, roastForCooldown);
+    }
+    return;
+  }
+
+  let roast;
+
+  // AI roasts are a premium feature. Today everyone is premium (PREMIUM_FOR_ALL),
+  // so this runs for all users; when payments arrive, free users skip straight to
+  // the static fallback. AI also falls back to static on any failure or rate-limit.
+  if (uwIsPremium(storage.is_pro)) {
+    try {
+      const timeOfDay = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const accessToken = await getFreshAccessToken(storage.session);
+
+      const response = await fetch(`${API_BASE_URL}/api/roast`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({
+          user_id: storage.user_id,
+          url: details.url,
+          site_name: matchedSite,
+          work_goal: storage.work_goal,
+          visit_count_today: visitCount,
+          time_of_day: timeOfDay,
+          persona: personaId
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        roast = data.roast;
+      }
+    } catch (error) {
+      console.error('Error getting AI roast:', error);
+    }
+  }
+
+  // Fallback to static roast if AI is disabled, fails, or is rate-limited
   if (!roast) {
     roast = STATIC_ROASTS[Math.floor(Math.random() * STATIC_ROASTS.length)];
   }
@@ -200,7 +280,11 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     type: 'SHOW_OVERLAY',
     roast,
     site_name: matchedSite,
-    strictness: storage.strictness || 'hard'
+    strictness: storage.strictness || 'hard',
+    work_goal: storage.work_goal || '',
+    visit_count: visitCount + 1,
+    persona_name: personaName,
+    escape_delay: UWARDEN_CONFIG.ESCAPE_DELAY_SECONDS
   });
 
   // Log the visit (with the roast that was shown)
@@ -211,6 +295,8 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 
 // Match a URL against the blacklist by hostname, so "x.com" matches
 // "https://x.com/home" but not "netflix.com" via a loose substring.
+// Returns { entry, hostname } — `entry` is the raw blacklist text (for display),
+// `hostname` is the normalized domain (stable key for cooldown storage).
 function matchBlacklistedSite(rawUrl, blacklist) {
   let hostname;
   try {
@@ -219,8 +305,8 @@ function matchBlacklistedSite(rawUrl, blacklist) {
     return null;
   }
 
-  return blacklist.find((entry) => {
-    const site = entry
+  const entry = blacklist.find((item) => {
+    const site = item
       .toLowerCase()
       .trim()
       .replace(/^https?:\/\//, '')
@@ -228,7 +314,31 @@ function matchBlacklistedSite(rawUrl, blacklist) {
       .replace(/\/.*$/, '');
     if (!site) return false;
     return hostname === site || hostname.endsWith('.' + site);
-  }) || null;
+  });
+
+  return entry ? { entry, hostname } : null;
+}
+
+// --- Cooldown mode storage ---
+// cooldowns: { [hostname]: { date: 'YYYY-MM-DD', unlockAt: <ms timestamp> } }
+// Once a site's cooldown has been served today, it stays unlocked for the
+// rest of the day; closing/reopening the tab does not reset the timer, since
+// unlockAt is fixed the moment the cooldown starts.
+async function getCooldownUnlockAt(hostname) {
+  const { cooldowns } = await chrome.storage.local.get(['cooldowns']);
+  const today = new Date().toISOString().split('T')[0];
+  const entry = cooldowns?.[hostname];
+  return entry && entry.date === today ? entry.unlockAt : null;
+}
+
+async function startCooldown(hostname) {
+  const { cooldowns } = await chrome.storage.local.get(['cooldowns']);
+  const today = new Date().toISOString().split('T')[0];
+  const unlockAt = Date.now() + UWARDEN_CONFIG.COOLDOWN_MINUTES * 60 * 1000;
+  await chrome.storage.local.set({
+    cooldowns: { ...(cooldowns || {}), [hostname]: { date: today, unlockAt } }
+  });
+  return unlockAt;
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -379,7 +489,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           .eq('user_id', message.userId)
           .gte('visited_at', today)
           .lt('visited_at', today + 'T23:59:59.999Z');
-        
+
         if (error) {
           sendResponse({ count: 0 });
         } else {
@@ -388,6 +498,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       } catch (error) {
         console.error('Error getting blocked count:', error);
         sendResponse({ count: 0 });
+      }
+    }
+    if (message.type === 'GET_TODAY_STATS') {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: visits, error } = await supabase
+          .from('visit_logs')
+          .select('was_overridden')
+          .eq('user_id', message.userId)
+          .gte('visited_at', today)
+          .lt('visited_at', today + 'T23:59:59.999Z');
+
+        if (error) throw error;
+
+        const total = visits?.length || 0;
+        const caved = visits?.filter((v) => v.was_overridden).length || 0;
+        sendResponse({ total, caved, resisted: total - caved });
+      } catch (error) {
+        console.error('Error getting today stats:', error);
+        sendResponse({ total: 0, caved: 0, resisted: 0 });
       }
     }
     if (message.type === 'ADD_BLACKLIST_ITEM') {

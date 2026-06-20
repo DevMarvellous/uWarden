@@ -79,6 +79,7 @@ function updateSummaryStats(visits) {
     ? Object.keys(siteCounts).reduce((a, b) => siteCounts[a] > siteCounts[b] ? a : b)
     : '-';
 
+  document.getElementById('resisted-visits').textContent = totalVisits - overriddenVisits.length;
   document.getElementById('total-visits').textContent = totalVisits;
   document.getElementById('today-visits').textContent = todayVisits.length;
   document.getElementById('top-site').textContent = topSite;
@@ -173,24 +174,8 @@ function updateTable(visits) {
 }
 
 function updateShareStats(visits) {
-  // Calculate streak (consecutive days with no overrides)
-  const today = new Date();
-  let streak = 0;
-  
-  for (let i = 0; i < 30; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    
-    const dayVisits = visits.filter(v => v.visited_at.startsWith(dateStr));
-    const dayOverrides = dayVisits.filter(v => v.was_overridden);
-    
-    if (dayVisits.length > 0 && dayOverrides.length === 0) {
-      streak++;
-    } else if (dayVisits.length > 0) {
-      break;
-    }
-  }
+  // Shared with the popup so the streak number is always consistent (see config.js).
+  const streak = uwCalculateStreak(visits);
 
   // Calculate improvement vs last week
   const last7Days = visits.filter(v => {
@@ -221,28 +206,89 @@ function setupEventListeners() {
   document.getElementById('download-png').addEventListener('click', downloadAsPNG);
 }
 
-async function downloadAsPNG() {
+function downloadAsPNG() {
   try {
-    // Use html2canvas library (would need to be included)
-    // For now, create a simple download
-    const data = {
-      totalVisits: document.getElementById('total-visits').textContent,
-      todayVisits: document.getElementById('today-visits').textContent,
-      topSite: document.getElementById('top-site').textContent,
-      overrideRate: document.getElementById('override-rate').textContent,
-      streak: document.getElementById('streak-days').textContent,
-      improvement: document.getElementById('improvement-rate').textContent
+    const text = (id) => document.getElementById(id).textContent;
+    const stats = {
+      total: text('total-visits'),
+      today: text('today-visits'),
+      topSite: text('top-site'),
+      overrideRate: text('override-rate'),
+      streak: text('streak-days'),
     };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `uwarden-stats-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const W = 1080;
+    const H = 1080;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#080808';
+    ctx.fillRect(0, 0, W, H);
+
+    // Border frame
+    ctx.strokeStyle = '#1f1f1f';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(48, 48, W - 96, H - 96);
+
+    ctx.textAlign = 'center';
+
+    // Wordmark
+    ctx.fillStyle = '#b91c1c';
+    ctx.font = '600 30px monospace';
+    ctx.fillText('⚖  U W A R D E N', W / 2, 150);
+
+    // Hero: the streak (competence / comeback framing, not just shame)
+    ctx.fillStyle = '#f5f5f5';
+    ctx.font = 'italic 600 220px Georgia, serif';
+    ctx.fillText(String(stats.streak), W / 2, 470);
+
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '26px monospace';
+    ctx.fillText('DAY FOCUS STREAK', W / 2, 540);
+
+    // Divider
+    ctx.strokeStyle = '#1f1f1f';
+    ctx.beginPath();
+    ctx.moveTo(200, 620);
+    ctx.lineTo(W - 200, 620);
+    ctx.stroke();
+
+    // Stats row
+    const drawStat = (x, value, label) => {
+      ctx.fillStyle = '#f5f5f5';
+      ctx.font = '600 64px Georgia, serif';
+      ctx.fillText(String(value), x, 760);
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '22px monospace';
+      ctx.fillText(label, x, 805);
+    };
+    drawStat(W / 2 - 300, stats.total, 'ATTEMPTS BLOCKED');
+    drawStat(W / 2, stats.today, 'TODAY');
+    drawStat(W / 2 + 300, stats.overrideRate, 'CAVED %');
+
+    // Top offender
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '26px monospace';
+    ctx.fillText(`Biggest temptation: ${stats.topSite}`, W / 2, 910);
+
+    // Footer
+    ctx.fillStyle = '#4b5563';
+    ctx.font = 'italic 24px Georgia, serif';
+    ctx.fillText('The AI that roasts your distractions.', W / 2, 985);
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `uwarden-shame-card-${new Date().toISOString().split('T')[0]}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
   } catch (error) {
-    console.error('Error downloading stats:', error);
-    alert('Failed to download stats. Please try again.');
+    console.error('Error generating shame card:', error);
+    alert('Failed to generate shame card. Please try again.');
   }
 }

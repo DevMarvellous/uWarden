@@ -1,21 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getPersona } from '@/lib/personas';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Monetization switch — mirror of the extension's UWARDEN_CONFIG.PREMIUM_FOR_ALL.
+// Today everyone is premium. Set PREMIUM_FOR_ALL=false in env to gate AI roasts
+// behind the user's real `is_pro` flag once payments exist.
+const PREMIUM_FOR_ALL = process.env.PREMIUM_FOR_ALL !== 'false';
+
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { url, site_name, work_goal, visit_count_today, time_of_day } =
-      await request.json();
+function randomFrom(arr: string[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
-    // Require a valid Supabase session. This is free for all users, but the
-    // request must come from a signed-in user so the Gemini key cannot be
-    // abused by anonymous callers.
+export async function POST(request: NextRequest) {
+  const persona = getPersona();
+  try {
+    const body = await request.json();
+    const { url, site_name, work_goal, visit_count_today, time_of_day } = body;
+    const activePersona = getPersona(body.persona);
+
+    // Require a valid Supabase session so the Gemini key cannot be abused by
+    // anonymous callers.
     const authHeader = request.headers.get('authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
@@ -29,25 +40,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
     }
 
-    // Call Gemini 1.5 Flash
-    const prompt = `You are a Disappointed Nigerian Dad. Your child has just opened ${site_name} instead of working.
+    // Entitlement gate. AI roasts are premium; everyone is premium today.
+    let entitled = PREMIUM_FOR_ALL;
+    if (!entitled) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('is_pro')
+        .eq('id', user.id)
+        .single();
+      entitled = !!profile?.is_pro;
+    }
 
-Context:
-- Site opened: ${site_name} (${url})
-- What they should be working on: ${work_goal || 'their important tasks'}
-- Current time: ${time_of_day}
-- Times visited today: ${visit_count_today}
+    // Not entitled → serve a static roast (keeps the overlay UX identical).
+    if (!entitled) {
+      return NextResponse.json({ roast: randomFrom(activePersona.fallbacks) });
+    }
 
-Write ONE roast. Rules:
-- 1 to 2 sentences only. Never more.
-- Tone: quiet, tired, deeply unimpressed. Not angry. Just done.
-- Zero exclamation marks. Zero.
-- Reference their actual work goal directly in the roast.
-- Be specific to what people actually do on that site.
-- The more visits today, the more exhausted and resigned the tone.
-- Sound exactly like a Nigerian father who expected better and is no longer surprised.
-
-Return only the roast text. No quotes. No labels. No explanation.`;
+    const prompt = activePersona.buildPrompt({
+      site_name,
+      url,
+      work_goal,
+      time_of_day,
+      visit_count_today,
+    });
 
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -56,8 +71,8 @@ Return only the roast text. No quotes. No labels. No explanation.`;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 100, temperature: 0.9 }
-        })
+          generationConfig: { maxOutputTokens: 100, temperature: 0.9 },
+        }),
       }
     );
 
@@ -65,23 +80,14 @@ Return only the roast text. No quotes. No labels. No explanation.`;
     const roast = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
     if (!roast) {
-      // Fallback to a static roast if Gemini fails
-      const fallbacks = [
-        "You opened this site again. I am not surprised. I am just tired.",
-        "This site will not finish your work. Only you can do that. Close it.",
-        "I watched you open this. I chose not to comment. I am commenting now."
-      ];
-      return NextResponse.json({
-        roast: fallbacks[Math.floor(Math.random() * fallbacks.length)]
-      });
+      // Fallback to a static roast if Gemini fails or is rate-limited.
+      return NextResponse.json({ roast: randomFrom(activePersona.fallbacks) });
     }
 
-    return NextResponse.json({ roast });
+    return NextResponse.json({ roast, persona: activePersona.id });
   } catch (error) {
     console.error('Roast generation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate roast' },
-      { status: 500 }
-    );
+    // Last-resort fallback so the overlay always has something to show.
+    return NextResponse.json({ roast: randomFrom(persona.fallbacks) });
   }
 }
