@@ -8,8 +8,8 @@
 //   API_BASE_URL: 'https://your-app.vercel.app'
 
 const UWARDEN_CONFIG = {
-  // Where /api/roast is served from. Local dev default:
-  API_BASE_URL: 'http://localhost:3001',
+  // Where /api/roast is served from. Production:
+  API_BASE_URL: 'https://u-warden.vercel.app',
 
   SUPABASE_URL: 'https://kmjuarnudralmomkbhph.supabase.co',
   SUPABASE_ANON_KEY:
