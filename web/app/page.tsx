@@ -35,6 +35,10 @@ export default function Home() {
           </p>
           <span className="citation-stamp">Free — no fee</span>
         </div>
+
+        <a className="citation-privacy" href="/privacy">
+          Privacy Policy
+        </a>
       </div>
     </main>
   );

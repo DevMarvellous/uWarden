@@ -70,19 +70,29 @@ async function logVisit(userId, url, siteName, roast) {
   }
 }
 
-// Mark visit as overridden
+// Mark visit as overridden. PostgREST ignores order/limit on UPDATE, so we
+// can't update "the latest row" in one call without flagging every matching
+// row. Instead: find the latest row's id, then update only that id.
 async function markVisitAsOverridden(url) {
   try {
     const storage = await chrome.storage.local.get(['user_id']);
     if (!storage.user_id) return;
 
-    const { error } = await supabase
+    const { data: rows, error: selErr } = await supabase
       .from('visit_logs')
-      .update({ was_overridden: true })
+      .select('id')
       .eq('user_id', storage.user_id)
       .eq('url', url)
       .order('visited_at', { ascending: false })
       .limit(1);
+
+    if (selErr) throw selErr;
+    if (!rows || rows.length === 0) return;
+
+    const { error } = await supabase
+      .from('visit_logs')
+      .update({ was_overridden: true })
+      .eq('id', rows[0].id);
 
     if (error) throw error;
   } catch (error) {
