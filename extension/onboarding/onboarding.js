@@ -10,8 +10,25 @@ let userData = {
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
+  watchForSession();
   checkExistingSession();
 });
+
+// The Google sign-in round trip can outlast the message channel back to this
+// page, so don't rely solely on the SIGN_IN_GOOGLE response. The background
+// always persists the session to storage when sign-in succeeds; watch for that
+// and advance the moment it appears.
+function watchForSession() {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes.session) return;
+    const session = changes.session.newValue;
+    if (session && currentStep === 1) {
+      userData.session = session;
+      userData.userId = session.user.id;
+      goToStep(2);
+    }
+  });
+}
 
 function setupEventListeners() {
   // Step 1: Google Sign In
