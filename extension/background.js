@@ -419,6 +419,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           access_token: accessToken,
           refresh_token: refreshToken
         });
+        console.log('[uWarden] setSession result:', {
+          hasSession: !!sessionData?.session,
+          err: sessErr?.message
+        });
         if (sessErr || !sessionData?.session) {
           sendResponse({ error: sessErr?.message || 'Could not establish session.' });
           return;
@@ -430,6 +434,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           user_id: session.user.id,
           email: session.user.email
         });
+        console.log('[uWarden] sign-in complete, responding with session for', session.user.email);
         sendResponse({ session });
       } catch (error) {
         console.error('Error signing in:', error);
