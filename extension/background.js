@@ -386,17 +386,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return;
         }
 
+        console.log('[uWarden] launching auth flow, redirectTo =', redirectTo);
         const redirectUrl = await chrome.identity.launchWebAuthFlow({
           url: data.url,
           interactive: true
         });
+        console.log('[uWarden] auth flow returned:', redirectUrl);
 
-        // Supabase (implicit flow) returns the tokens in the URL fragment.
-        const hashParams = new URLSearchParams(new URL(redirectUrl).hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
+        // Tokens come back in the URL fragment (implicit flow); fall back to the
+        // query string just in case. Also surface any error Supabase returned.
+        const parsed = new URL(redirectUrl);
+        const params = new URLSearchParams(
+          (parsed.hash ? parsed.hash.substring(1) : '') || parsed.search.substring(1)
+        );
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const authError = params.get('error_description') || params.get('error');
+
+        if (authError) {
+          console.error('[uWarden] auth provider returned error:', authError);
+          sendResponse({ error: authError });
+          return;
+        }
 
         if (!accessToken) {
+          console.error('[uWarden] no access_token in redirect URL:', redirectUrl);
           sendResponse({ error: 'Sign in did not return a session. Please try again.' });
           return;
         }
