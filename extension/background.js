@@ -139,19 +139,34 @@ async function getFreshAccessToken(session) {
 // nothing or is rejected. Re-hydrate the client from chrome.storage before any
 // authenticated operation; setSession also refreshes an expired access token.
 async function ensureBackgroundSession() {
-  const { session } = await chrome.storage.local.get(['session']);
-  if (!session?.access_token) return null;
+  try {
+    const { session } = await chrome.storage.local.get(['session']);
+    if (!session?.access_token) return null;
 
-  const { data, error } = await supabase.auth.setSession({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token
-  });
+    const { data, error } = await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token
+    });
 
-  if (!error && data?.session) {
-    await chrome.storage.local.set({ session: data.session });
-    return data.session;
+    if (error) {
+      // Stored token is no longer valid (e.g. the auth user/DB was reset).
+      // Drop it so it stops breaking every authenticated call; the user just
+      // signs in again. This must never throw out of here — it runs before
+      // every message handler, including SIGN_IN_GOOGLE itself.
+      console.warn('Clearing invalid stored session:', error.message);
+      await chrome.storage.local.remove(['session']);
+      return null;
+    }
+
+    if (data?.session) {
+      await chrome.storage.local.set({ session: data.session });
+      return data.session;
+    }
+    return null;
+  } catch (e) {
+    console.error('ensureBackgroundSession failed:', e);
+    return null;
   }
-  return session;
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
