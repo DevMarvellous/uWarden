@@ -55,15 +55,18 @@ async function checkExistingSession() {
 
 async function signInWithGoogle() {
   try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'SIGN_IN_GOOGLE',
-      redirectTo: chrome.runtime.getURL('onboarding/onboarding.html')
-    });
-    
+    // The background script runs the whole OAuth round trip via
+    // chrome.identity and returns the established session directly.
+    const response = await chrome.runtime.sendMessage({ type: 'SIGN_IN_GOOGLE' });
+
     if (response && response.error) {
       throw new Error(response.error);
-    } else if (response && response.url) {
-      chrome.tabs.update({ url: response.url });
+    }
+
+    if (response && response.session) {
+      userData.session = response.session;
+      userData.userId = response.session.user.id;
+      goToStep(2);
     }
   } catch (error) {
     console.error('Error signing in:', error);
@@ -235,17 +238,4 @@ function goToStep(stepNumber) {
   });
   
   currentStep = stepNumber;
-}
-
-// Handle OAuth redirect
-if (window.location.hash.includes('access_token')) {
-  chrome.runtime.sendMessage({ type: 'GET_SESSION' }).then((response) => {
-    if (response && response.session) {
-      userData.session = response.session;
-      userData.userId = response.session.user.id;
-      goToStep(2);
-    }
-  }).catch((error) => {
-    console.error('Error handling OAuth redirect:', error);
-  });
 }

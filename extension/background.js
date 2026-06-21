@@ -133,50 +133,38 @@ async function getFreshAccessToken(session) {
   return session.access_token;
 }
 
+// The MV3 service worker is torn down when idle, which wipes the in-memory
+// Supabase session. Without it, the client falls back to the anon role and
+// every RLS-protected read/write (blacklist, visit logs, stats) returns
+// nothing or is rejected. Re-hydrate the client from chrome.storage before any
+// authenticated operation; setSession also refreshes an expired access token.
+async function ensureBackgroundSession() {
+  const { session } = await chrome.storage.local.get(['session']);
+  if (!session?.access_token) return null;
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  });
+
+  if (!error && data?.session) {
+    await chrome.storage.local.set({ session: data.session });
+    return data.session;
+  }
+  return session;
+}
+
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({ url: chrome.runtime.getURL('onboarding/onboarding.html') });
   }
 });
 
-// Handle OAuth redirect
-chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-  if (details.url.includes('access_token=')) {
-    // Extract tokens from URL
-    const url = new URL(details.url);
-    const hashParams = new URLSearchParams(url.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    
-    if (accessToken) {
-      // Set session in Supabase
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken
-      }).then(({ data, error }) => {
-        if (!error && data.session) {
-          // Store session and redirect to onboarding
-          chrome.storage.local.set({
-            session: data.session,
-            user_id: data.session.user.id
-          });
-          
-          // Close the OAuth tab and open onboarding
-          chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            if (tabs[0]) {
-              chrome.tabs.update(tabs[0].id, { 
-                url: chrome.runtime.getURL('onboarding/onboarding.html') 
-              });
-            }
-          });
-        }
-      });
-    }
-  }
-});
-
 chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (details.frameId !== 0) return;
+
+  // Authenticate the SW's Supabase client as the user (RLS) before querying.
+  await ensureBackgroundSession();
 
   const storage = await chrome.storage.local.get([
     'session', 'blacklist', 'user_id', 'work_goal', 'strictness', 'is_pro', 'persona'
@@ -353,35 +341,71 @@ async function startCooldown(hostname) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handleMessage = async () => {
+    // Re-hydrate the Supabase session from storage so RLS-protected DB calls in
+    // the handlers below act as the signed-in user. No-op before sign-in.
+    await ensureBackgroundSession();
+
     if (message.type === 'OVERRIDE_USED') {
       await markVisitAsOverridden(message.url);
     }
     if (message.type === 'GET_SESSION') {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        sendResponse({ session });
-      } catch (error) {
-        console.error('Error getting session:', error);
-        sendResponse({ error: error.message });
-      }
+      // Read from storage, not supabase.auth.getSession(): the SW's in-memory
+      // session is lost on teardown, but the stored copy survives.
+      const { session } = await chrome.storage.local.get(['session']);
+      sendResponse({ session: session || null });
     }
     if (message.type === 'SIGN_IN_GOOGLE') {
       try {
+        // chrome.identity gives us an https://<id>.chromiumapp.org/ redirect that
+        // Chrome intercepts in a popup and hands back to us — no fragile
+        // redirect to a chrome-extension:// page, no dependence on the SW
+        // staying alive across the round trip.
+        const redirectTo = chrome.identity.getRedirectURL();
+
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
-          options: {
-            redirectTo: message.redirectTo,
-            skipBrowserRedirect: true
-          }
+          options: { redirectTo, skipBrowserRedirect: true }
         });
         if (error) {
           sendResponse({ error: error.message });
-        } else {
-          sendResponse({ url: data.url });
+          return;
         }
+
+        const redirectUrl = await chrome.identity.launchWebAuthFlow({
+          url: data.url,
+          interactive: true
+        });
+
+        // Supabase (implicit flow) returns the tokens in the URL fragment.
+        const hashParams = new URLSearchParams(new URL(redirectUrl).hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (!accessToken) {
+          sendResponse({ error: 'Sign in did not return a session. Please try again.' });
+          return;
+        }
+
+        const { data: sessionData, error: sessErr } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (sessErr || !sessionData?.session) {
+          sendResponse({ error: sessErr?.message || 'Could not establish session.' });
+          return;
+        }
+
+        const session = sessionData.session;
+        await chrome.storage.local.set({
+          session,
+          user_id: session.user.id,
+          email: session.user.email
+        });
+        sendResponse({ session });
       } catch (error) {
         console.error('Error signing in:', error);
-        sendResponse({ error: error.message });
+        // launchWebAuthFlow throws if the user closes the popup.
+        sendResponse({ error: 'Sign in was cancelled or failed. Please try again.' });
       }
     }
     if (message.type === 'SAVE_WORK_GOAL') {
