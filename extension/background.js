@@ -473,6 +473,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ error: error.message });
       }
     }
+    if (message.type === 'SAVE_STRICTNESS') {
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({ strictness: message.strictness })
+          .eq('id', message.userId);
+
+        if (error) {
+          sendResponse({ error: error.message });
+        } else {
+          await chrome.storage.local.set({ strictness: message.strictness });
+          sendResponse({ success: true });
+        }
+      } catch (error) {
+        console.error('Error saving strictness:', error);
+        sendResponse({ error: error.message });
+      }
+    }
     if (message.type === 'SAVE_BLACKLIST') {
       try {
         const { data: { session } } = await supabase.auth.getSession();

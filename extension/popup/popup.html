@@ -69,6 +69,39 @@
                 </div>
             </div>
 
+            <div class="section">
+                <h3 class="section-title">Strictness mode</h3>
+                <div class="mode-options">
+                    <button class="mode-option" data-strictness="cooldown">
+                        <span class="mode-name">Cooldown</span>
+                        <span class="mode-desc">Site auto-unlocks after a wait. No typing.</span>
+                    </button>
+                    <button class="mode-option" data-strictness="hard">
+                        <span class="mode-name">Hard</span>
+                        <span class="mode-desc">Type a long phrase to escape.</span>
+                    </button>
+                    <button class="mode-option" data-strictness="soft">
+                        <span class="mode-name">Soft</span>
+                        <span class="mode-desc">Type a short phrase to escape.</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3 class="section-title">Work goal</h3>
+                <div class="blacklist-input-group">
+                    <input
+                        type="text"
+                        id="work-goal-input"
+                        class="text-input"
+                        placeholder="What are you working on?"
+                        maxlength="120"
+                    >
+                    <button id="save-goal" class="add-button">Save</button>
+                </div>
+                <div id="goal-saved" class="goal-saved hidden">Saved ✓</div>
+            </div>
+
             <div class="actions-section">
                 <button id="view-dashboard" class="primary-button">
                     View Shame Stats

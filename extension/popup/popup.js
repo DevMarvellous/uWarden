@@ -65,6 +65,8 @@ function updateUI() {
     updateTodayStats();
     updateStreakBanner();
     updatePersonaUI();
+    updateStrictnessUI();
+    updateWorkGoalUI();
   }
 }
 
@@ -78,6 +80,53 @@ async function selectPersona(persona) {
   userData.persona = persona;
   await chrome.storage.local.set({ persona });
   updatePersonaUI();
+}
+
+function updateStrictnessUI() {
+  document.querySelectorAll('.mode-option').forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.strictness === userData.strictness);
+  });
+}
+
+async function selectStrictness(strictness) {
+  userData.strictness = strictness;
+  // Save locally first so blocking uses the new mode immediately, even if the
+  // DB write below fails or the user is offline.
+  await chrome.storage.local.set({ strictness });
+  updateStrictnessUI();
+
+  // Best-effort persistence to the user's profile.
+  if (userData.userId) {
+    chrome.runtime.sendMessage({
+      type: 'SAVE_STRICTNESS',
+      userId: userData.userId,
+      strictness
+    });
+  }
+}
+
+function updateWorkGoalUI() {
+  document.getElementById('work-goal-input').value = userData.workGoal || '';
+}
+
+async function saveWorkGoal() {
+  const input = document.getElementById('work-goal-input');
+  const workGoal = input.value.trim();
+
+  userData.workGoal = workGoal;
+  await chrome.storage.local.set({ work_goal: workGoal });
+
+  if (userData.userId) {
+    chrome.runtime.sendMessage({
+      type: 'SAVE_WORK_GOAL',
+      userId: userData.userId,
+      workGoal
+    });
+  }
+
+  const saved = document.getElementById('goal-saved');
+  saved.classList.remove('hidden');
+  setTimeout(() => saved.classList.add('hidden'), 1500);
 }
 
 function updateBlacklistUI() {
@@ -162,23 +211,10 @@ async function updateStreakBanner() {
 }
 
 function setupEventListeners() {
-  // Logged-out: Get Started
-  document.getElementById('get-started').addEventListener('click', async () => {
-    try {
-      const response = await chrome.runtime.sendMessage({
-        type: 'SIGN_IN_GOOGLE',
-        redirectTo: chrome.runtime.getURL('onboarding/onboarding.html')
-      });
-
-      if (response && response.error) {
-        alert('Sign in failed: ' + response.error);
-      } else if (response && response.url) {
-        chrome.tabs.create({ url: response.url });
-      }
-    } catch (error) {
-      console.error('Error signing in:', error);
-      alert('Sign in failed: ' + error.message);
-    }
+  // Logged-out: Get Started → open the onboarding page, which runs the full
+  // Google sign-in flow via chrome.identity.
+  document.getElementById('get-started').addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding/onboarding.html') });
   });
 
   // Active: blacklist + dashboard
@@ -193,6 +229,17 @@ function setupEventListeners() {
   // Persona selector
   document.querySelectorAll('.persona-option').forEach((btn) => {
     btn.addEventListener('click', () => selectPersona(btn.dataset.persona));
+  });
+
+  // Strictness mode selector
+  document.querySelectorAll('.mode-option').forEach((btn) => {
+    btn.addEventListener('click', () => selectStrictness(btn.dataset.strictness));
+  });
+
+  // Work goal
+  document.getElementById('save-goal').addEventListener('click', saveWorkGoal);
+  document.getElementById('work-goal-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') saveWorkGoal();
   });
 }
 

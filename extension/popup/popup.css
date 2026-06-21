@@ -394,3 +394,49 @@ body {
   font-size: 11px;
   color: #6b7280;
 }
+
+/* Strictness Mode Selector */
+.mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  background: #141414;
+  border: 1px solid #2d2d2d;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.mode-option:hover {
+  border-color: #3d3d3d;
+}
+
+.mode-option.selected {
+  border-color: #b91c1c;
+  background: #1a0f0f;
+}
+
+.mode-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5f5f5;
+}
+
+.mode-desc {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.goal-saved {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #16a34a;
+}
